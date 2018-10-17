@@ -14,7 +14,9 @@ def main():
     params = json.load(open("params.json"))
 
     train_sent = list()
-    char_labels = list()
+    #char_labels = list()
+    name_labels = list()
+    dir_labels = list()
     e1 = list()
     e2 = list()
     p1 = list()
@@ -29,7 +31,17 @@ def main():
         e1.append(e1_clause)
         e2.append(e2_clause)
         train_sent.append(tokens)
-        char_labels.append(train_file[start + 1].replace("\n", ""))
+        #char_labels.append(train_file[start + 1].replace("\n", ""))
+        rel = train_file[start + 1].replace("\n", "")
+        if rel == "Other":
+            name_labels.append("Other")
+            dir_labels.append(1)
+        else:
+            name_labels.append(rel[:rel.find("(")])
+            if rel[-3:-1] == "e2":
+                dir_labels.append(0)
+            else:
+                dir_labels.append(1)
         pos_1, pos_2 = get_pos(tokens, e1_s, e1_e, e2_s, e2_e)
         p1.append(pos_1)
         p2.append(pos_2)
@@ -39,18 +51,19 @@ def main():
     print("There are", len(vocabs), "words in the dataset")
     train_sent = words_to_id(vocabs, train_sent)
 
+    print("Converting tags to numbers")
+    #labels, tag_dict = tags_to_id(char_labels, set(char_labels))
+    name_labels, tag_dict = tags_to_id(name_labels, set(name_labels))
+    labels = [(name, dir) for name, dir in zip(name_labels, dir_labels)]
+
+    params["n_outputs"] = len(tag_dict.values())
+    tag_dict = {idx: tag for tag, idx in tag_dict.items()}
+
     if params["pretrain"]:
         print("Loading GloVe pretrained vectors")
         embeddings = read_embedding(vocabs, 'embeddings/glove.300.txt')
     else:
         embeddings = None
-
-    print("Converting tags to numbers")
-    labels, tag_dict = tags_to_id(char_labels, set(char_labels))
-
-    params["n_outputs"] = len(tag_dict.values())
-    tag_dict = {idx: tag for tag, idx in tag_dict.items()}
-
 
     X = np.array(train_sent)
     y = np.array(labels)
@@ -59,7 +72,7 @@ def main():
                                                                                      test_size=0.2, random_state=33)
 
     json.dump(params, open("params.json", "w"))
-    true_dev_labels = [tag_dict[idx] for idx in y_dev]
+    true_dev_labels = [true_label(idx[0], idx[1], tag_dict) for idx in y_dev]
     train_batches = get_batches(X_train, y_train, params["max_len"], vocabs.index("<pad>"))
     dev_batches = get_batches(X_dev, y_dev, params["max_len"], vocabs.index("<pad>"))
     p1_train = just_batch([p1[idx] for idx in indices_train], max_length=params["max_len"], pad_idx=1000)

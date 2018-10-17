@@ -66,7 +66,7 @@ def just_batch(corpus, max_length=None, pad_idx=None):
     for idx in range(len(corpus) // 100):
         text_batch = corpus[idx * 100: min((idx + 1) * 100, len(corpus))]
         if pad_idx:
-            text_batch = add_padding(text_batch, pad_idx, max_length)
+            text_batch = add_padding(text_batch, pad_idx)
         batches.append(np.array([np.array(line) for line in text_batch]))
     return batches
 
@@ -80,14 +80,15 @@ def get_batches(corpus, labels=None, max_length=None, pad_idx=None):
 
         if pad_idx:
             lengths = np.array([len(line) for line in text_batch])
-            text_batch = add_padding(text_batch, pad_idx, max_length)
+            text_batch = add_padding(text_batch, pad_idx)
             #labels_batch = add_padding(labels_batch, -1, max_length)
         batches.append((np.array([np.array(line) for line in text_batch]), lengths, np.array([np.array(label) for label in labels_batch])))
     return batches
 
 
-def add_padding(corpus, pad_idx, max_length):
+def add_padding(corpus, pad_idx):#, max_length):
     # adds padding to a dataset according to the padding token and max length
+    max_length = max(len(sent) for sent in corpus)
     for i in range(len(corpus)):
         corpus[i] = corpus[i][:min(len(corpus[i]), max_length) - 1]
         while len(corpus[i]) < max_length:
@@ -151,6 +152,7 @@ def ids_to_char(chars, vocab, data, max, sent_max):
 
 
 def get_e1_e2(tokens):
+    """
     e2_s = 0
     e2_e = 0
     e1_s = 0
@@ -178,6 +180,23 @@ def get_e1_e2(tokens):
                 e2_clause = " ".join(tokens[e2_s:e2_e + 1])
             else:
                 e2_clause = tokens[idx]
+    """
+    e1_clause = ""
+    e2_clause = ""
+    for idx, tok in enumerate(tokens):
+        if tok.find("/e1") != -1:
+            e1_e = idx
+            tokens[idx] = tok.replace("/e1", "")
+        elif tok.find("/e2") != -1:
+            e2_e = idx
+            tokens[idx] = tok.replace("/e2", "")
+    for idx, tok in enumerate(tokens):
+        if tok.find("e1") != -1:
+            e1_s = idx
+            tokens[idx] = tok.replace("e1", "")
+        elif tok.find("e2") != -1:
+            e2_s = idx
+            tokens[idx] = tok.replace("e2", "")
     return e1_clause, e2_clause, e1_s, e1_e, e2_s, e2_e
 
 
@@ -198,3 +217,10 @@ def get_pos(tokens, e1_s, e1_e, e2_s, e2_e):
         if idx > e2_e:
             pos_2.append(idx - e2_e)
     return pos_1, pos_2
+
+def true_label(name, dir, tag_dict):
+    if tag_dict[name] == "Other":
+        return "Other"
+    else:
+        direct = "(e1,e2)" if dir == 0 else "(e2,e1)"
+        return tag_dict[name] + direct
