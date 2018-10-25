@@ -1,25 +1,35 @@
-## Overview
+This code uses Python 3.6
+Libraries:
 
-This code repository provides the data and evaluation script to help you start your assignment in Relation Extraction.
+- nltk 3.2.5
+- numpy 1.15.2
+- tensorflow 1.8
+- sklearn 0.19.2
 
-## Data
+The params.json file contains the parameters of the program:
+    attention_size: the size of hidden vectors that re generated to produce the attention values,
+    num_layers : number of cell layers in the RNN
+    model : can be LSTM, BiLSTM or CNN
+    hidden_size : the hidden size of the neural cells
+    n_outputs : number of labels, it is added to the params file by make_vocab.py
+    filter_sizes : size of different filters used by CNN
+    num_filters : number of filters used in CNN
+    pretrain : use pretrained word embeddings or not
+    embedding_size : size of embeddings
+    learning_rate : learning rate of the model
+    keep_ratio : keep ratio of cells
+    epochs : max number of epochs
+    max_char : added by make_vocab.py
+    max_len : added by make_vocab.py
 
-Both train and (unlabeled) test set are provided. It's stored in `data/` folder. The data format and semantic meaning of all relations are specified in `data/SemEval2010_task8_training/`. 
 
-## Evaluation
+Pleas add 300d Glove word embeddings (Download from http://nlp.stanford.edu/data/glove.840B.300d.zip)
+into embeddings folder and name it "glove.300.txt".
 
-The offical evaluation script provided in `data/SemEval2010_task8_scorer-v1.2/`, which gives the detailed report for multiple evaluation metrics. Note that there are three ways of evaluation in official script, which is documented in `data/SemEval2010_task8_scorer-v1.2/README.txt`. For our assignment, the performance will be graded on the third method: macro-avergaed (9+1)-way classification, with direction taken into account.
+You can first run "python3 make_vocab.py" to read the train and test file, partition the train set to train and dev,
+get position vectors for all sentences, convert sentences to their their Glove representation and also get the labels.
 
-To run the offical evaluation script, you need to install `perl`, which won't be too hard if following the guideline [here](https://www.perl.org/get.html). After installation, you can test the performance using:
+make_vocab.py generates the data.pkl that contains all the data. You can also skip this part and use the data.pkl file that is already in the repository
 
-```bash
-perl semeval2010_task8_scorer-v1.2.pl <PROPOSED_ANSWERS> <ANSWER_KEY>
-```
 
-Besides the offical script, we also provide a non-standard implementation `python`. To run the evaluation result, directly run the following script to get an idea of what the result is like:
 
-```bash
-python utils/scorer.py
-```
-
-, or you can call function `evaluate(y_true, y_pred)` directly in other python program.

@@ -24,8 +24,12 @@ def main():
     else:
         lstm = LSTM(params, data["vocab"], data["embeddings"])
         lstm.build()
-        #lstm.run_model(data["train_batches"], data["dev_batches"], data["true_dev_labels"], data["tag_dict"])
-        lstm.run_model(data)
+        predictions = lstm.run_model(data)
+    with open(data_folder + "test_output.txt", "w") as out:
+        for i, pred in enumerate(predictions):
+            out.write(str(8000 + i) + "\t" + pred + "\n")
+
+
 
 if __name__ == '__main__':
     main()

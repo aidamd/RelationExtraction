@@ -3,7 +3,6 @@ from collections import Counter
 import operator
 import numpy as np
 import re
-from sklearn.model_selection import train_test_split
 
 
 def stopwords(corpus):
@@ -19,7 +18,7 @@ def get_vocabs_chars(data):
     chars = list(set(char for word in all for char in word))
     dictionary = Counter([word for word in all])
     words, counts = zip(*sorted(dictionary.items(), key=operator.itemgetter(1), reverse=True))
-    vocab = list(words) + ["<unk>", "<pad>"]
+    vocab = list(words[:10000]) + ["<unk>", "<pad>"]
     return vocab, chars, max(len(word) for word in dictionary.keys()), max(len(sent) for sent in data)
 
 def tags_to_id(tags, unique_tags):
@@ -37,8 +36,8 @@ def words_to_id(vocab, data):
             try:
                 data[sent][word] = dictionary[data[sent][word]]
             except Exception:
-                data[sent][word] = dictionary["<unk>"]
                 print(data[sent][word])
+                data[sent][word] = dictionary["<unk>"]
     return data
 
 def read_embedding(vocab, file):
@@ -60,7 +59,7 @@ def read_embedding(vocab, file):
             embedding[v] = unk_embedding
     return np.array(list(embedding.values()))
 
-def just_batch(corpus, max_length=None, pad_idx=None):
+def just_batch(corpus, pad_idx=None):
     # changes the input list to a list of batches
     batches = []
     for idx in range(len(corpus) // 100):
@@ -70,7 +69,7 @@ def just_batch(corpus, max_length=None, pad_idx=None):
         batches.append(np.array([np.array(line) for line in text_batch]))
     return batches
 
-def get_batches(corpus, labels=None, max_length=None, pad_idx=None):
+def get_batches(corpus, labels=None, pad_idx=None):
     # changes two lists of inputs to batches with paddings
     batches = []
     for idx in range(len(corpus) // 100):
